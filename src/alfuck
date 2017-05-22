@@ -36,9 +36,13 @@ parser = OptionParser.new do |opts|
     if $RUBY_PLATFORM == "x86_64-linux"
       options[:compile] = compile
     else
-      puts "\033[31m\033[1m64 bit linux is required for compilation,\n outputting script\033[0m\033[22m"
-      abort "Invalid architecture"
+      options[:compile] = false
+      puts "\033[31m\033[1m64 bit linux is required for compilation,\noutputting script\033[0m\033[22m"
     end
+  end
+
+  opts.on('--lotrize', '\'Lotrize\' the output script') do |lotr|
+    options[:lotrize] = lotr
   end
 
   opts.on_tail("-h", "--help", "Show this message") do
@@ -67,12 +71,33 @@ dict =
   ']' => '/'
 }
 
+lotr_dict =
+{
+  '<' => "Legolas;\n",
+  '>' => "Ring Wraith;\n",
+  '+' => "Aragorn;\n",
+  '-' => "Sauron;\n",
+  '.' => "Oakenshield;\n",
+  ',' => "Isildur;\n",
+  '[' => "Bilbo;\n",
+  ']' => "Baggins;\n"
+}
+
 infile = File.new(options[:infile], 'r')
 outfile = File.new(options[:outfile], 'w')
+if options[:lotrize]
+  puts "A wizard is never late ;)"
+end
 infile.each_char { |chr|
   if options[:keep_newlines] && chr == "\n"
     outfile.write("\n")
     next
+  end
+  if options[:lotrize]
+    if dict.include? chr
+      outfile.write(lotr_dict[chr])
+      next
+    end
   end
   if dict.include? chr
     outfile.write(dict[chr])
