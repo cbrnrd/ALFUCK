@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+require 'optparse'
+
+# Check environment stuff
+if ENV['PATH'].include? "alfuck"
+  puts "Do not run alfuck while outside of its respective directory!"
+  exit 1
+end
+
+@verb = false
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "\nUsage #{ARGV[0]} -i <infile> -o <outfile> [opts]"
+
+  opts.separator("\nRequired options:")
+
+  opts.on('-i', '--infile FILE','The input alphuck file', String) do |infile|
+    options[:infile] = infile
+  end
+
+  opts.on('-o', '--outfile FILE', 'The output brainfuck file', String) do |outfile|
+    options[:outfile] = outfile
+  end
+
+  opts.separator("\nAdditional options:")
+
+  opts.on('-v', '--verbose', 'Use verbose output') do |x|
+    @verb = x
+  end
+
+  opts.on('--keep-newlines', 'Keep the newlines from the original file') do |keepnewlines|
+    options[:keep_newlines] = keepnewlines
+  end
+
+  opts.on('-e', '--executable', 'Compile the source file to an executable (gcc & php required)') do |compile|
+    if $RUBY_PLATFORM == "x86_64-linux"
+      options[:compile] = compile
+    else
+      puts "\033[31m\033[1m64 bit linux is required for compilation,\n outputting script\033[0m\033[22m"
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit
+  end
+end
+
+parser.parse!
+
+if !options[:infile] || !options[:outfile]
+  puts "\033[31m\033[1m-i and -o are required!\033[0m\033[22m"
+  exit 1
+end
+#p options
+
+dict =
+{
+  '<' => 'l',
+  '>' => 'r',
+  '+' => 'a',
+  '-' => 's',
+  '.' => 'o',
+  ',' => 'i',
+  '[' => '\\',
+  ']' => '/'
+}
+
+infile = File.new(options[:infile], 'r')
+outfile = File.new(options[:outfile], 'w')
+infile.each_char { |chr|
+  if options[:keep_newlines] && chr == "\n"
+    outfile.write("\n")
+    next
+  end
+  if dict.include? chr
+    outfile.write(dict[chr])
+    next
+  else
+    if @verb && (chr != "\n" || chr != "\r" || /[\\*.?]/.match(chr))
+      puts "Skipping invalid character \'#{chr}\'"
+    end
+    next
+  end
+}
+
+if options[:compile]
+  puts "Compiling file..."
+  Process.exec("bash ../util/compile.sh #{options[:infile]} #{options[:outfile]}")
+end
+
+# Ensure this always happens
+outfile.close
+infile.close
