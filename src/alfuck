@@ -37,6 +37,7 @@ parser = OptionParser.new do |opts|
       options[:compile] = compile
     else
       puts "\033[31m\033[1m64 bit linux is required for compilation,\n outputting script\033[0m\033[22m"
+      abort "Invalid architecture"
   end
 
   opts.on_tail("-h", "--help", "Show this message") do
