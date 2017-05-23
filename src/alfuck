@@ -41,6 +41,10 @@ parser = OptionParser.new do |opts|
     end
   end
 
+  opts.on('--from-bf', 'Translate from brainfuck instead of to it') do |to_bf|
+    options[:tobf] = to_bf
+  end
+
   opts.on('--lotrize', '\'Lotrize\' the output script') do |lotr|
     options[:lotrize] = lotr
   end
@@ -53,13 +57,37 @@ end
 
 parser.parse!
 
+if options[:tobf]
+  if !options[:infile].include? '.af'
+    puts 'Input ALFUCK file must have a .af extension!'
+    exit 1
+  end
+
+  if !options[:outfile].include? '.b' || !options[:outfile].include? '.bf'
+    puts 'Output file must have a .b or .bf extension!'
+    exit 1
+  end
+end
+
 if !options[:infile] || !options[:outfile]
   puts "\033[31m\033[1m-i and -o are required!\033[0m\033[22m"
   exit 1
 end
 #p options
 
-dict =
+dict = 
+{
+  'l' => '<',
+  'r' => '>',
+  'a' => '+',
+  's' => '-',
+  'o' => '.',
+  'i' => ',',
+  '\\' => '[',
+  '/' => ']'
+}
+
+bf_to_af_dict =
 {
   '<' => 'l',
   '>' => 'r',
@@ -99,11 +127,17 @@ infile.each_char { |chr|
       next
     end
   end
+
+  if bf_to_af_dict.include? chr
+    outfile.write(bf_to_af_dict[chr])
+    next
+  end
+  
   if dict.include? chr
     outfile.write(dict[chr])
     next
   else
-    if @verb && (chr != "\n" || chr != "\r" || /[\\*.?]/.match(chr))
+    if @verb && (chr != "\n" || chr != "\r" || /[\\*.?]/.match(chr))  # I think this regex works
       puts "Skipping invalid character \'#{chr}\'"
     end
     next
